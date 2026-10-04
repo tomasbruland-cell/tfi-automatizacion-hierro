@@ -1,3 +1,10 @@
+
+**Video demo (3 min):** [Ver el video](PEGA-ACA-EL-LINK)
+
+**Documentación:** [Evidencia de las 6 pruebas](docs/evidencia-pruebas.pdf) · [Diagrama de arquitectura](docs/arquitectura.pdf) · [Workflow de n8n](workflow.json)
+
+https://drive.google.com/file/d/1jnJjnnx8eZmBEg2YfucnbXYdS5AvHpPh/view?usp=sharing
+
 # Ecosistema de Propuestas Comerciales con IA — Venta de Hierro para Construcción
 
 **Trabajo Final Integrador — Automatización con IA**

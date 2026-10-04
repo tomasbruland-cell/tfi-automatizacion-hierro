@@ -1,0 +1,1028 @@
+{
+  "name": "TFI - Propuestas Comerciales Hierro",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "43c3f8c7-27c1-491b-84fc-32faf9f0cdd1",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://app.notion.com/p/44f4be0598d44e8dbd6aa1a068b5ff07"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Estado|select",
+              "condition": "equals",
+              "optionValue": "Pendiente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "c0b57488-aead-4919-b690-dfa8382ee327",
+      "name": "Get many database pages",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "dataSourceId": {
+          "__rl": true,
+          "value": "43c3f8c7-27c1-491b-84fc-32faf9f0cdd1",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://app.notion.com/p/44f4be0598d44e8dbd6aa1a068b5ff07"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1104,
+        112
+      ],
+      "id": "0f62c2f6-fd71-4a23-83ff-1f510170df20",
+      "name": "Notion Trigger",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.6-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.6-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=  Sos un asistente comercial de una empresa que vende hierro para la construcción.\n\nDatos del pedido:\n- Cliente: {{ $('Get a database page').item.json.name }}\n- Detalle solicitado: {{ $('Get many database pages').item.json.property_detalle_del_pedido }}\n- Condición de facturación: {{ $('Get many database pages').item.json.property_facturacion[0] }}\n\nLista de precios disponible (precio unitario sin IVA, por unidad):\n   {{ $('Code in JavaScript').first().json.lista_precios_texto }}\n\nInstrucciones para calcular el total:\n1. Interpretá el detalle solicitado: identificá la medida de hierro pedida y la cantidad.\n2. Buscá el precio unitario correspondiente en la lista de precios (por nombre de producto).\n3. Si la condición de facturación es \"Facturado\", aplicá 21% de IVA sobre el precio de lista. Si es \"Sin Factura\", aplicá 10,5% de IVA.\n4. Calculá el total: precio_unitario × cantidad × (1 + IVA correspondiente).\n5. Si no encontrás el producto solicitado en la lista de precios, indicalo claramente en el mail en vez de inventar un precio.\n\nRedactá una propuesta comercial breve y profesional para este cliente, confirmando los materiales solicitados y el monto TOTAL final (no muestres el desglose del cálculo ni el IVA aplicado, solo el total). Tono cordial. No inventes plazos de entrega, dejá ese campo como \"[A confirmar]\".\n\nFormato de salida: Asunto y Cuerpo del mail,"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxOutputTokens": 3000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        112
+      ],
+      "id": "83f3991a-2ff9-4af9-a267-383638cb9e76",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6F0Pq7qh6qJJiqMJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.property_cliente[0] }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        -208,
+        112
+      ],
+      "id": "23701178-50ab-4120-881b-89bb11f6e99d",
+      "name": "Get a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Get many database pages').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Propuesta generada|rich_text",
+              "textContent": "=   {{ $json.content.parts[0].text }}"
+            },
+            {
+              "key": "Estado|select",
+              "selectValue": "Procesado por IA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        592,
+        48
+      ],
+      "id": "2a669d53-39bb-4c22-8e2d-2d49e0af39e2",
+      "name": "Update a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "tomasbruland@gmail.com",
+        "subject": "=Aprobación requerida: Propuesta para {{ $('Get a database page').item.json.name }}",
+        "message": "={{ $('Message a model').item.json.content.parts[0].text }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "buttonDisapprovalStyle": "primary"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        48
+      ],
+      "id": "ff295e2a-e117-4e72-b5a2-1200f3f0311c",
+      "name": "Send message and wait for response",
+      "webhookId": "a50cd721-ff99-4aed-a366-b3a9ecb73e1c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "WgnuJE0OWUukL5QJ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1juGh5yOzH_nWdYWIn6kJjAxvmzYNs_uwDGPT99UCk0s",
+          "mode": "list",
+          "cachedResultName": "TFI - Registro de Errores.",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1juGh5yOzH_nWdYWIn6kJjAxvmzYNs_uwDGPT99UCk0s/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1juGh5yOzH_nWdYWIn6kJjAxvmzYNs_uwDGPT99UCk0s/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "=   {{ $now }}",
+            "Pedido_ID": "={{ $('Get many database pages').item.json.property_nombre }}",
+            "Nodo con error": "={{ ({ 'If': 'Validación de datos (If)', 'Message a model': 'Generador de Propuesta (Gemini)', 'Get a database page': 'Búsqueda de Cliente (Notion)', 'If1': 'Aprobación humana (HITL)' })[$prevNode.name] || $prevNode.name }}",
+            "Mensaje error": "={{ $json.error ? $json.error : ($prevNode.name === 'If1' ? 'Propuesta rechazada por el responsable (Decline) - no se envió al cliente' : ($('Get many database pages').item.json.property_estado === 'Procesado por IA' ? 'Pedido ya procesado anteriormente - se omite reprocesamiento' : 'Pedido sin detalle - no se envió a la IA (validación de datos)')) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pedido_ID",
+              "displayName": "Pedido_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nodo con error",
+              "displayName": "Nodo con error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mensaje error",
+              "displayName": "Mensaje error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1488,
+        112
+      ],
+      "id": "9713ba29-07e4-4bfc-81c2-78787d33990d",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cp18GHRuCP7GdOgA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d88e1b59-a9b4-44e4-bcf1-1e60d6005a65",
+              "leftValue": "={{ $('Get many database pages').item.json.property_detalle_del_pedido.trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "fed521f9-bd30-43d3-92cb-2a9e6417038e",
+              "leftValue": "={{ $('Get many database pages').item.json.property_estado ?? '' }}",
+              "rightValue": "Procesado por IA",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        16,
+        352
+      ],
+      "id": "b5e7c126-d6e3-4762-b0e9-deda9691e678",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "=     {{ $('Get a database page').item.json.property_email }}",
+        "subject": "     Su cotización de hierro para la construcción",
+        "message": "=     {{ $('Message a model').item.json.content.parts[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        -32
+      ],
+      "id": "0fb3dc53-c002-403c-b63d-29dc09b52f8a",
+      "name": "Send a message",
+      "webhookId": "ab6661b8-fa40-4aff-8961-c7faf64874a7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "WgnuJE0OWUukL5QJ",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/f5a29f4078c7400f9890288d20f9b7c5/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Notion-Version\": \"2022-06-28\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -880,
+        112
+      ],
+      "id": "3953420f-1177-4b6a-90c2-80f757f6d043",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Jfzl6QhVUBp8ijmh",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lee los datos pineados del nodo HTTP Request (Lista de Precios)\nconst productos = $('HTTP Request').first().json.results;\n\n// Arma un texto simple: un producto por línea\nconst listaTexto = productos.map(item => {\n  const nombre = item.properties.Producto.title[0].plain_text;\n  const unidad = item.properties.Unidad.rich_text[0].plain_text;\n  const precio = item.properties.Precio.number;\n  return `${nombre} — $${precio} / ${unidad}`;\n}).join('\\n');\n\nreturn [{ json: { lista_precios_texto: listaTexto } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        112
+      ],
+      "id": "f89cf25f-917f-4307-93a3-59da3f0837ed",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a939c9f8-7e28-4b48-879f-acaeae6baec7",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        48
+      ],
+      "id": "5724b2b3-e7b1-4d0d-be6d-f1198280dccc",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "formTitle": "Pedido de Materiales",
+        "formDescription": "Completá tus datos y el detalle de tu pedido de hierro para la construcción.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre / Empresa"
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Telefono"
+            },
+            {
+              "fieldLabel": "Facturacion",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Facturado"
+                  },
+                  {
+                    "option": "Sin factura"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Hierro ADN x 06 mm — Cantidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Hierro ADN x 08 mm — Cantidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Hierro ADN x 10 mm — Cantidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Hierro ADN x 12 mm — Cantidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Hierro ADN x 16 mm — Cantidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Hierro ADN x 20 mm — Cantidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Hierro ADN x 25 mm — Cantidad",
+              "fieldType": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1104,
+        816
+      ],
+      "id": "067b45e7-a9ad-4d44-873d-75f8d8739a4a",
+      "name": "On form submission",
+      "webhookId": "377564e8-b506-4566-9dc0-8d58c195c9a9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4cbe9a41-4232-4831-97cb-31801bd04540",
+              "leftValue": "={{ $json.results.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -656,
+        816
+      ],
+      "id": "d2a878a3-cf99-4e99-be0b-bf26ff25fa46",
+      "name": "If2",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "0bcb4215-d4e5-402a-b59c-0b495dc2d7a2",
+          "mode": "list",
+          "cachedResultName": "Clientes",
+          "cachedResultUrl": "https://app.notion.com/p/8f4627917d554fbab009e2652849118a"
+        },
+        "title": "={{ $('On form submission').item.json['Nombre / Empresa'] }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Email|email",
+              "emailValue": "=   {{ $('On form submission').item.json['Email'] }}"
+            },
+            {
+              "key": "Teléfono|phone_number",
+              "phoneValue": "=   {{ $('On form submission').item.json['Telefono'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        -432,
+        912
+      ],
+      "id": "10c6b5d1-fd8b-4943-9f4a-4b1f366fc3b4",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1946b3b-6b62-40b0-85e3-2138bbdb0249",
+              "name": "cliente_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -208,
+        912
+      ],
+      "id": "ff5d2459-140b-40f3-880f-b5595e136843",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6ac7e579-1c4f-4a7b-8453-a3fccb7e0056",
+              "name": "cliente_id",
+              "value": "={{ $json.results[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -208,
+        720
+      ],
+      "id": "15e952dd-9914-4116-bb49-b6a4aa4844a4",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "43c3f8c7-27c1-491b-84fc-32faf9f0cdd1",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://app.notion.com/p/44f4be0598d44e8dbd6aa1a068b5ff07"
+        },
+        "title": "={{ $('On form submission').item.json['Nombre / Empresa'] }} - Nuevo pedido",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Detalle del pedido|rich_text",
+              "textContent": "=   {{ $json.detalle_pedido }}"
+            },
+            {
+              "key": "Facturacion|multi_select",
+              "multiSelectValue": "=   {{ $('On form submission').item.json['Facturacion'] }}"
+            },
+            {
+              "key": "Cliente|relation",
+              "relationValue": [
+                "={{ $json.cliente_id }}"
+              ]
+            },
+            {
+              "key": "Estado|select",
+              "selectValue": "Pendiente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        240,
+        816
+      ],
+      "id": "a1b97dba-8716-425e-9dfe-8603c4eca18e",
+      "name": "Create a database page1",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/8f4627917d554fbab009e2652849118a/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filter\": {\n    \"property\": \"Nombre\",\n    \"title\": {\n      \"contains\": \"{{ $('On form submission').item.json['Nombre / Empresa'] }}\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -880,
+        816
+      ],
+      "id": "d704b3a4-4ac8-4228-b11f-683b918a2bac",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Jfzl6QhVUBp8ijmh",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const form = $('On form submission').item.json;\n\nconst medidas = [\n  { medida: '06mm', cantidad: form['Hierro ADN x 06 mm — Cantidad'] },\n  { medida: '08mm', cantidad: form['Hierro ADN x 08 mm — Cantidad'] },\n  { medida: '10mm', cantidad: form['Hierro ADN x 10 mm — Cantidad'] },\n  { medida: '12mm', cantidad: form['Hierro ADN x 12 mm — Cantidad'] },\n  { medida: '16mm', cantidad: form['Hierro ADN x 16 mm — Cantidad'] },\n  { medida: '20mm', cantidad: form['Hierro ADN x 20 mm — Cantidad'] },\n  { medida: '25mm', cantidad: form['Hierro ADN x 25 mm — Cantidad'] },\n];\n\nconst detalle = medidas\n  .filter(m => Number(m.cantidad) > 0)\n  .map(m => `${m.cantidad}TN HIERRO ADN X ${m.medida}`)\n  .join(', ');\n\nconst cliente_id = $input.item.json.cliente_id;\n\nreturn [{ json: { detalle_pedido: detalle, cliente_id: cliente_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        816
+      ],
+      "id": "999df74b-4708-4e2f-a429-d1fb0598d872",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Get many database pages').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Estado|select",
+              "selectValue": "CON ERROR"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        304,
+        496
+      ],
+      "id": "fc5407ae-67a6-4d23-8b37-63797cb5542b",
+      "name": "Update a database page1",
+      "credentials": {
+        "notionApi": {
+          "id": "4dPvMfippjNzeoiD",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "Get a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a database page": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Update a database page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a database page": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update a database page1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page1": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Create a database page1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "079e3deb-be08-4032-9ecd-c000ac48f72d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "15b664ad83b1ce5ca8fa62c2e07c5bfaefbcc0f097ec6d5f1bbfe09f6993adc2"
+  },
+  "nodeGroups": [],
+  "id": "ONjFvV1YgStxcNIP",
+  "tags": []
+}
